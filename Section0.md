@@ -26,4 +26,5 @@
     sudo dpkg -i vagrant_1.7.2_x86_64.deb
 
 コマンド叩いて起動確認
+
     vargrant
