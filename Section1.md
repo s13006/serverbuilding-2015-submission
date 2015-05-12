@@ -13,16 +13,10 @@
 
 virtualboxを起動して左上の新規と書かれているところをクリック
 
-インストール中に指示されるパーティションの設定は特に指定しません。
-
-インストール中、root以外の作業用(管理者)のユーザーを作成してください。
-
-
-
-VirtualBoxで作成する仮想マシンのメモリのサイズは1GBにします。また、ストレージの容量は8GB程度に設定してください。
+パーティションの設定は特に指定しない。
 
 名前、OSのタイプ、バージョンを選択
-ここではCentOS 7、Linux、Red Hat(64bit)と設定する。
+**ここではCentOS 7、Linux、Red Hat(64bit)と設定する。**
 
 続いてメモリーサイズの選択、今回は1024MBと設定する。
 
@@ -37,11 +31,7 @@ VirtualBoxで作成する仮想マシンのメモリのサイズは1GBにしま�
 
 
 
-CentOSの公式サイトよりCentOS 7 Minimal ISO(x86_64)のISOファイルをダウンロードし、
-
-irtualBox上にインストールしてください。
-
-インストールする。
+CentOSの公式サイトよりCentOS 7 Minimal ISO(x86_64)のISOファイルをダウンロードし、 インストールする。
 
     sudo aptitude install dconf-tools
 
@@ -49,6 +39,8 @@ irtualBox上にインストールしてください。
 
     dconf-editor
 
+起動したらsystem→ proxyを選択、ignore-hostsに['localhost', '127.0.0.0/8', '::1', '172.16.40.0/22', '192.168.0.0/16']と設定。
+こうすることでプロキシを通らずにバーチャルボックスと通信することが可能になる。
 
 
 ####ネットワークアダプター1/2へのIPアドレスの設定とssh接続の確認
@@ -56,28 +48,26 @@ irtualBox上にインストールしてください。
 /etc/sysconfig/network-scriptにifcfg-enp0s?というファイルがあるので、
 そのファイルを編集してネットワーク接続ができるように設定します。
 
-DHCPでIPアドレスを取得できますので、[RedHat Enterprise Linux 7のマニュアル(英語)](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html-single/Networking_Guide/index.html#sec-Configuring_a_Network_Interface_Using_ifcg_Files)を読んで設定してください。
-
-起動したらsystem→ proxyを選択、ignore-hostsに['localhost', '127.0.0.0/8', '::1', '172.16.40.0/22', '192.168.0.0/16']と設定。
-こうすることでプロキシを通らずにバーチャルボックスと通信することが可能になる。
+DHCPでIPアドレスを取得でるので、[RedHat Enterprise Linux 7のマニュアル(英語)]を読んだらなんとなくいける。
+https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html-single/Networking_Guide/index.html#sec-Configuring_a_Network_Interface_Using_ifcg_Files
 
 
 
 再びvirtualboxを起動し、左上の起動と書かれているボタンをクリック。
-[起動ハードディスクを選択]ダイアログた表示されるのでプルダウンメニュー右の画像をクリック、インストールしたいISOイメージを選択して起動。
+[起動ハードディスクを選択]ダイアログが表示されるのでプルダウンメニュー右の画像をクリック、インストールしたいISOイメージを選択して起動。
 
 言語を選択、日本語にするとキーボード配列も日本語になるのでUS配列に変更する必要がある。
 
-ネットワークとホスト名を選択し、画面右上にあるスイッチをオンにする。
+[ネットワークとホスト名]を選択し、画面右上にあるスイッチをオンにする。
 
 インストールの開始を選択すると次の画面に移動するので、rootのパスワードとユーザーの作成をする。この時作られたユーザーを管理者に設定。
 
 インストールが完了したらCentOSを再起動。
 
-SSH接続の確認
+
+####SSH接続の確認
 
 Ubuntuからsshで仮想マシンに接続できることを確認してください。
-
 (ついでなので、公開鍵認証でログインできるようにしておくといいと思いますよ。必須ではないけど。)
 
 virtualbox上で
