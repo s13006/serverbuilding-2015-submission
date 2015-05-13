@@ -121,8 +121,11 @@ wgetの場合
 に
 
 		#Proxy Setting
-		http://172.16.40.1:8888
+		proxy=http://172.16.40.1:8888
 
+		#Proxy Setting
+		http_proxy=http://172.16.40.1:8888
+		https_proxy=https://172.16.40.1:8888
 を追加。
 
 
@@ -136,13 +139,146 @@ Wordpressを動作させるためには下記のソフトウェアが必要に�
 * MySQL
 * PHP
 
-これらをyumを使用してインストールし、Wordpressをダウンロード、展開して動作させてください。
+###Apacheをインストール
+
+		yum -y install httpd
+
+####Apache起動確認
+
+		sudo systemctl start httpd
+
+起動できたら一旦終了
+
+		sudo systemctl stop httpd
+
+####firewallを無効化
+
+**Apacheを起動するだけではfirewallで弾かれて接続できないので無効にしなければならない**
+
+		sudo systemctl stop firewalld
+
+**それとSELinuxも無効にする**
+(なんかOSを壊したりできないようにする機能らしい)
+
+		sudo vi /etc/selinux/config
+
+に書いてある
+
+		SELINUX=enforcing
+
+を
+
+		SELINUX=disabled
+
+に変更し
+
+		setenforce 0
+
+を実行。
+
+
+###MySQLインストール
+
+####MySQL公式リポジトリファイルをインストール
+
+		sudo yum -y install http://dev.mysql.com/get/mysql-community-release-el7-5.noarch.rpm
+
+####MySQLをインストール
+		sudo yum -y install mysql
+		sudo yum -y install mysql-devel
+		sudo yum -y install mysql-server
+		sudo yum -y install mysql-utilities
+
+####MySQLデーモンの起動確認・rootのパスワード設定
+
+		sudo service mysqld start
+
+		mysqladmin -u root@localhost password '[password]'
+
+		sudo service mysqld stop
+
+####ユーザの作成
+
+mysqlに接続
+
+		mysql -u root -p
+
+		CREATE USER [username]@[hostname] IDENTIFIED BY '[password]'
+
+**Query OK, 0 rows affected (0.00 sec)**
+と表示されたらユーザ作成が完了。
+
+####ユーザ権限を設定する。
+
+		GRANT ["与える権限"] ON ["データベース名"].["テーブル名"] TO ["ユーザー名"]
+
+ここでは
+
+		GRANT ALL ON *.* TO ['ユーザー名'];
+
+実行して下のコマンドを叩いて権限を更新する。
+
+		FLUSH privileges;
+
+
+####データベースの追加
+
+MySQLに追加したユーザで接続しデータベースを作成する
+
+		mysql> CREATE DATABASE ['databasename']
+
+
+###PHPインストール
+
+		sudo yum -y install php php-mbstring php-mysql
+
+####インストールできたか確認
+
+		rpm -qa | grep php
+
+####PHP設定
+
+		sudo vi /etc/php.ini
+
+//692行目
+default_charset="UTF-8"
+
+//878行目
+date.timezone="Asia/Tokyo"
+
+に変更
+
+###WordPressのインストール
+
+####パッケージをダウンロード・解凍
+
+		wget http://wordpress.org/latest.tar.gz
+
+		tar -xzvf latest.tar.gz
+
+
+####wp-config.phpの編集
+
+//** MySQL設定 -この情報はホスティング先から入手してください。**//
+以下に書いてあるdefine(~~~~)を書き換える。
+
+例 define('DB_NAME','db_wordpress');
+
+
+ここまで出来たらApacheを起動してwordpressディレクトリをサーバにアップ(?)する。
+
+		sudo mv wordpress /var/www/html
+
+コマンドを実行したらブラウザを開いて
+
+		http://['ipaddress']/wordpress
+
+にアクセス
+
+あとはブラウザに表示されてるやつを適当に記入していく。
+
+
 
 Wordpressのインストールは[公式サイトに手順が掲載されています](http://wpdocs.sourceforge.jp/WordPress_%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB)のでそちらを参考にすると確実かと思います。
-
-なお、ssh接続できるようになっているので、VirtualBoxの画面からではなく、UbuntuからSSHで接続して設定してください。
-(そのほうが圧倒的に楽です。)
-
-Wordpressが表示されたら講師に確認してもらってください。また、今のうちに手順をまとめておいてください。
 
 <a name="LAMP">※1</a>: Linux・Apache・MySQL・PHPの頭文字を取ってLAMPといいます。
