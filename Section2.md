@@ -346,11 +346,240 @@ Apache HTTP Server 2.2とPHP5.5の環境を構築し、Wordpressを動かして�
 
 その時は別のVagrantfile(作業ディレクトリ)を作ってやってくださいね。
 
+###別の仮想サーバを立てる方法
+簡単。別のディレクトリにVagrantfileをコピーしてvagrantupするだけ
+
+###yumの設定
+何回も書いたけど一応。
+
+		sudo vi /etc/yum.conf
+
+の中にプロキシの設定を書く。
+
+#Proxy Setting
+proxy=http://172.16.40.1:8888
+
+をどこかに書くだけ
+
+###wgetをget
+
+		sudo yum install wget
+
+wgetのプロキシ設定もする
+		vi .wgetrc
+
+#Proxy Setting
+http_proxy=172.16.40.1:8888
+https_proxy=172.16.40.1:8888
+
+と記入する。
+
+
+###Apache HTTP Server 2.2のソースからビルドしてインストール
+
+
+ビルドに必要なパッケージを入れる
+
+		sudo yum install -y gcc make
+		sudo yum install prel zlib-devel
+
+次にApacheのインストール
+
+		wget http://ftp.jaist.ac.jp/pub/apache//httpd/httpd-2.2.29.tar.gz
+		tar zxvf httpd-2.2.29.tar.gz
+		./configure --enable-rewrite=shared --enable-speling=shared
+		make
+		sudo make install
+
+そのまま起動してもエラーが出る。出ても起動できるけど気持ち悪いから直す。
+		sudo vi /etc/hosts
+の中を全部コメントアウトして
+		127.0.0.1               dacelo localhost.localdomain localhost
+
+と書く。
+
+次にhttpd.confファイルの設定
+
+		sudo vi /usr/local/apache2/conf/httpd.conf
+の中を書き換える
+		ServerName dacelo:80
+		DirectoryIndex index.html index.php
+
+phpを読み込めるように
+<FilesMatch \.php$>
+	 SetHandler application/x-httpd-php
+</FilesMatch>
+
+を最後の行に追加
+
+###MySQLをインストール
+
+MySQLのパッケージをインストール
+
+		sudo yum -y install http://dev.mysql.com/get/mysql-community-release-el7-5.noarch.rpm
+
+		sudo yum -y install mysql mysql-devel mysql-server mysql-utilities
+
+インストールできたら設定、以下のものを追記していく
+		sudo vi /etc/my.cnfi.d/server.cnf
+
+		[mysqld]
+		character-set-server = utf8
+
+		sudo vi /etc/my.cnf.d/mysql-clients.cnf
+
+		[mysql]
+		default-character-set = utf8
+		show-warning
+
+		sudo systemctl start mysql.service
+
+SQLファイルを作成してデータベース作成とユーザの登録を行う(mysqlコマンドを使って一気に流すパターン)
+
+		vi wordpress.sql
+
+下記の文を書き写す。
+
+		set password for root@localhost=password('[password]');
+		insert into user set user="[ユーザ名]", password=password('[password]'),host="localhost";
+		create database [データベース名];
+		grant all on *.* to [ユーザ名]@localhost;
+		FLUSH PRIVIEGES;
+
+書いたら次のコマンドを実行
+		mysql -uroot -Dmysql < wordpress.sql
+
+何もエラーが起きなければログインできるか確認。
+		mysql -uroot -p
+
+ログインできれば一旦mysql終了
+		MariaDB[none]> exit
+
+続けて新規データベースへ新規ユーザでログインできるか確認
+		mysql -u[ユーザ名] -p
+
+ログインできれば一旦mysql終了
+		MariaDB[none]> exit
+
+
+
+###PHP5.5のソースからビルドしてインストール
+
+		wget http://jp1.php.net/distributions/php-5.5.25.tar.gz
+		tar xzvf php-5.5.25.tar.gz /usr/local/src/
+		cd /usr/local/src/php-5.5.25
+
+必要になるであろうパッケージをインストール
+		sudo yum install libxml2 libxml2-devel
+
+ビルドファイル作成
+configureコマンドを叩いてエラーが出ないか確認
+
+		./configure \
+		--with-apxs2=/usr/local/apache2/bin/apxs \
+		--with-mysql=mysqlnd \
+		--with-mysqli=mysqlnd \
+		--with-pdo-mysql=mysqlnd \
+		--with-openssl \
+		--with-zlib \
+		--enable-mbstring
+
+なんもエラーが出なければ
+		make && sudo make install
+
+
+###WordPressをインストール
+公式サイトからwget
+		wget http://wordpress.org/latest.tar.gz
+		tar zxvf latest.tar.gz
+		sudo mv wordpress /usr/local/apache2/htdpcs
+
+		sudo cp /home/vagrant/php-5.5.25/php.ini-development /usr/local/lib/php.ini
+		sudo vi /usr/local/lib/php.ini
+
+次の場所にPATHを書き足す
+
+		mysql.default_socket=/var/lib/mysql/mysql.sock
+		mysqli.default_socket=/var/lib/mysql/mysql.sock
+
+あとはブラウザで開いてポチポチ
+
+
 ## 2-4 ベンチマークを取る
 
 サーバーの性能測定のためにベンチマークを取ることがあります。
 
 [別ページ](misc/Benchmark.md)にまとめてありますのでそちらを参照してください。
+
+とりあえずWordPressを開く
+違うipアドレスからなにか取ってこようとしてエラーが出ていたらwp_optionの設定をいじらなければならない。
+
+mysqlに接続して
+		select * from wp_options where option_name = 'siteurl';
+		select * from wp_options where option_name = 'home';
+
+を実行し違うipアドレスが設定されているか確認
+
+		update wp_options set option_value = 'http://[ipaddress]/wordpress/' where option_name = 'siteurl';
+		update wp_options set option_value = 'http://[ipaddress]/wordpress/' where option_name = 'home';
+
+これで設定を上書きできる。
+
+
+次にApacheBenchをホスト側(Ubuntu)にインストールする。
+
+		exit
+		sudo aptitude install apache2-utils
+
+インストールできたらabコマンドを叩いて保存する
+
+		ab http://[ipaddress]/wordpress > wordpress_ab.text
+
+次に Chrome ウェブストアにアクセスしてPageSpeed Insightsを追加する。
+追加できたらWordPressの画面でベンチマークを取る
+
+###WordPress高速化
+まずはhtdocs以下のファイルの権限をdaemonに変更する
+
+		sudo chown -R daemon /usr/local/apache2/htdocs/
+
+####圧縮を有効にする
+
+mod_filterとmod_deflateを追加する
+
+		sudo /usr/local/apache2/bin/apxs -cia mod_filter.c
+		sudo /usr/local/apache2/bin/apxs -cia mod_deflate.c
+
+httpd.confのLoadModuleなんちゃらの行に下記のコードを追加する。
+
+		LoadModule deflate_module          modules/mod_deflate.so
+
+httpd.confに下記のコードを追加する。
+
+		<Location />
+		# Insert filter
+		SetOutputFilter DEFLATE
+		SetEnvIfNoCase Request_URI \
+		\.(?:gif|jpe?g|png)$ no-gzip dont-vary
+		</Location>
+
+
+####プラグインの導入
+まずプラグインを導入するためにphp.iniのupload_max_filesizeの値を変更
+
+		upload_max_filesize=8M
+
+
+**入れたプラグインと設定
+
+・WP Super Cache
+
+画像サイズの変更
+・EWWW Image Optimizer
+
+画像の読み込みを後回しにする
+・Unveil Lazy Load
+
 
 ## 2-5 セキュリティチェック
 
