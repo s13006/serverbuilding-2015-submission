@@ -22,7 +22,7 @@ USBストレージにVagrant用CentOS boxを用意してありますので登録
 viでVagrantfileを開き、
 
     config.vm.box = "base"
-d
+
 と書かれているのを
 
     config.vm.box = "CentOS65"
@@ -96,14 +96,18 @@ Nginxはディストリビューターからrpmが提供されていないため
 		sudo vi /etc/yum.conf
 
 で、
+
 		proxy=http://172.16.40.1:8888
+
 を追加するだけ。
 
 
 wgetの設定はファイルを作成し
+
 		vi ~/.wgetrc
 
 下記の設定を記入
+
 		http_proxy=http://172.16.40.1:8888
 		https_proxy=https://172.16.40.1:8888
 
@@ -111,12 +115,15 @@ wgetの設定はファイルを作成し
 ###Nginxのインストール
 
 Nginxの公式サイトからリポジトリ追加用のrpmファイルを落としてくる
+
 		wget http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
 
 落としてきたらNginxのリポジトリを追加
+
 		sudo yum -y install nginx-release-centos-7-0.el7.ngx.noarch.rpm
 
 ついかできたらyumコマンドでNginxをインストールする。
+
 		sudo yum install nginx
 
 インストールしたらバージョンの確認
@@ -126,16 +133,20 @@ Nginxの公式サイトからリポジトリ追加用のrpmファイルを落と
 ####Nginxのデーモンを起動する
 
 Nginxデーモンがブート時に自動起動するように設定しておく。
+
 		sudo systemctl enable nginx.service
 
 nginxデーモンの登録状態を確認。
+
 		systemctl list-unit-files | grep nginx
 		nginx.service										enable
+
 (enableならおっけー)
 
 ####Nginxの設定
 
 		sudo vi /etc/nginx/conf.d/default.conf
+
 と言うファイルを作成し以下の文を変更or追加。
 
 		server {
@@ -160,6 +171,7 @@ nginxデーモンの登録状態を確認。
 
 
 ###phpのインストール
+
 		yum -y install php-mysql php-mbstring php-fpm
 
 ####php-fpmの設定
@@ -174,6 +186,7 @@ nginxデーモンの登録状態を確認。
 ####php-fpmデーモンを起動
 
 先に追加したグループ、ユーザが存在しない場合は追加する。
+
 		cat /etc/passwd | grep nginx
 
 を実行して何も出力されない場合はユーザやグループが存在しない。
@@ -183,7 +196,6 @@ nginxデーモンの登録状態を確認。
 
 		groupadd nginx
 		getent group nginx
-nginx:x:1001
  
 ユーザを追加します。
 		useradd -s /usr/sbin/nologin -g nginx -d /var/www -c nginx nginx
@@ -272,8 +284,7 @@ Apache HTTP Server 2.2とPHP5.5の環境を構築し、Wordpressを動かして�
 
 の中にプロキシの設定を書く。
 
-#Proxy Setting
-proxy=http://172.16.40.1:8888
+		proxy=http://172.16.40.1:8888
 
 をどこかに書くだけ
 
@@ -282,11 +293,11 @@ proxy=http://172.16.40.1:8888
 		sudo yum install wget
 
 wgetのプロキシ設定もする
+
 		vi .wgetrc
 
-#Proxy Setting
-http_proxy=172.16.40.1:8888
-https_proxy=172.16.40.1:8888
+		http_proxy=172.16.40.1:8888
+		https_proxy=172.16.40.1:8888
 
 と記入する。
 
