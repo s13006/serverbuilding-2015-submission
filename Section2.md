@@ -91,42 +91,32 @@ Vagrantfileで変更した設定を反映させるには
 Nginxはディストリビューターからrpmが提供されていないため、リポジトリを追加する必要があります。
 [公式サイト](http://nginx.org/en/linux_packages.html#stable)からリポジトリ追加用のrpmをダウンロードしてインストールしてください。
 
-その後yumでインストールできるようになります。
-
-NginxでPHPを動かすにはコツが必要ですのでがんばって検索して動かしてください。
-ヒントは **Nginx php-fpm** です。
-
-###scpと仮想マシンでファイルのやりとりをする
-公式サイトからCentOS7用のrpmファイルをダウンロードする。
-
-		vagrant ssh-config
-
-コマンドを実行すると仮想マシンにSSH接続をするためのOpenSSHの設定が得られる。
-上記の内容をファイルに書き出しておく。
-
-		vagrant ssh-config > ssh.config
-
-あとはscpコマンドの-Fオプションに先ほど書き出しておいたファイルを指定することでSSH接続用の設定として利用できる。
-		scp -F ssh.config [ダウンロードしたファイル名] vagrant@default:~/
-
-実行したら仮想マシンに接続してファイルの転送ができているか確認する。
-		vagrant ssh
-
-確認できたらrpmコマンドを使ってインストール
-		rpm -ivh [転送したrpmファイル名]
-
-インストールできたらyumコマンドでNginxをインストールする。
 まずはyumのproxyの設定。
 
 		sudo vi /etc/yum.conf
 
 で、
-		#Proxy Setting
 		proxy=http://172.16.40.1:8888
+を追加するだけ。
 
-を追加するだけ(てかSection1.mdに書いてある)
-設定をしたら
 
+wgetの設定はファイルを作成し
+		vi ~/.wgetrc
+
+下記の設定を記入
+		http_proxy=http://172.16.40.1:8888
+		https_proxy=https://172.16.40.1:8888
+
+
+###Nginxのインストール
+
+Nginxの公式サイトからリポジトリ追加用のrpmファイルを落としてくる
+		wget http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm
+
+落としてきたらNginxのリポジトリを追加
+		sudo yum -y install nginx-release-centos-7-0.el7.ngx.noarch.rpm
+
+ついかできたらyumコマンドでNginxをインストールする。
 		sudo yum install nginx
 
 インストールしたらバージョンの確認
@@ -135,71 +125,42 @@ NginxでPHPを動かすにはコツが必要ですのでがんばって検索し
 
 ####Nginxのデーモンを起動する
 
-ログ出力先ディレクトリを作成
-		mkdir -p /var/log/nginx/www.example.com
-
-ログ出食先ディレクトリの所有者をnginxとする。
-		chown nginx: /var/log/nginx/www.example.com
-		chmod +r+w /var/log/nginx/www.example.com
-
-
-Nginxデーモンが起動しているか確認する。
-		systemctl list-units | grep nginx
-何も出力されなければ起動していない状態だとわかる。
-
-次に、php-fpmデーモンの登録状態を確認。
-		systemctl list-unit-files | grep nginx
-		nginx.service										disabled
-と表示されればオッケー
-
-次に、nginxデーモンがブート時に自動起動するように設定しておく。
+Nginxデーモンがブート時に自動起動するように設定しておく。
 		sudo systemctl enable nginx.service
 
-再度、nginxデーモンの登録状態を確認。
+nginxデーモンの登録状態を確認。
 		systemctl list-unit-files | grep nginx
 		nginx.service										enable
 (enableならおっけー)
 
 ####Nginxの設定
 
-		sudo vi /etc/nginx/conf.d/wordpress
-と言うファイルを作成し以下の文を記入。
+		sudo vi /etc/nginx/conf.d/default.conf
+と言うファイルを作成し以下の文を変更or追加。
 
-server {
-  listen 80;
-	server_name example.com; # 取得したドメインを指定してください
-	root /var/www/wordpress;
-	index index.php;
+		server {
+			listen 80;
+			server_name localhost;
 
- #wp-config.phpへのアクセスをすべて拒否します。
-	location ~* /wp-config.php {
-		deny all;
-	}
+			location / {
+				root /usr/share/nginx/html; →			root /usr/share/nginx/wordpress;
+				index index.html index.htm; →			index index.html index.htm index.php;
+			}
 
-	location ~ \.php$ {
-		fastcgi_pass 127.0.0.1:9000;
-		fastcgi_param SCRIPT_FILENAME /var/www/wordpress$fastcgi_script_name;
-		fastcgi_param PATH_INFO $fastcgi_script_name;
-		include fastcgi_params;
-	}
-}
+			~~~~~~省略~~~~~~~~
 
-以上
-設定のチェック
-		sudo nginx -t
-を実行し、エラーっぽいのがなければおｋ
+			//以下のコメントを外していくつか変更
+			location ~ \.php$ {
+				root						/usr/share/nginx/wordpress;
+			~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-/etc/nginx/conf.d/default.conf
-/etc/nginx/conf.d/example.conf
-/etc/nginx/conf.d/example_ssl.conf
-の末尾に.noをつけて読み込まれないようにする。
+				fastcgi_param  SCRIPT_FILENAME  /usr/share/nginx/wordpress$fastcgi_script_name;
+			}
+		}
 
 
 ###phpのインストール
-		yum -y install php php-mysql php-gd php-mbstring php-fpm
-
-完了したらバージョンの確認
-		php --version
+		yum -y install php-mysql php-mbstring php-fpm
 
 ####php-fpmの設定
 
@@ -207,35 +168,8 @@ server {
 
 に書いてあることを下記のものに置き換える
 
-使用するポートを設定。
-listen = 127.0.0.1:9000
-
-許可するクライアントのIPアドレスを指定
-listen.allowed_clients = 127.0.0.1
-
-php-fpmのサービス実行ユーザ、グループを指定します。
-user = nginx
-group = nginx
-
-php-fpmのサービスのプロセス数を定量とするように設定しておきます。
-;pm = dynamic
-pm = static
-
-php-fpmの最大子プロセス数を設定します。
-;pm.max_children = 50
-pm.max_children = 3
-
-php-fpmが受け付ける最大要求数を設定します。
-ここで設定した要求数を処理したら子プロセスを再起動します。
-pm.max_requests = 500
-
-置き換えが完了したら
-		sudo vi /etc/nginx/nginx.conf
-の中の
-		access_log ~~~~~~~
-と書いてある行の下に
-		error_log /var/log/nginx/error.log;
-と追加する。
+		user = apache  → 		nginx
+		group = apache →		nginx
 
 ####php-fpmデーモンを起動
 
@@ -256,42 +190,22 @@ nginx:x:1001
 
 ####php-fpmデーモンの起動
 
-nginxの時とほぼ一緒なので説明は省略。
-
-		systemctl list-units | grep php-fpm
-
-		systemctl list-unit-files | grep php-fpm
-		php-fpm.service										disabled
-
-		sudo systemctl start php-fpm.service
-
-		systemctl list-units | grep php-fpm
-
-		systemctl list-unit-files | grep php-fpm
-		php-fpm.service										disabled
-
-		sudo systemctl enable php-fpm.service
-
-		systemctl list-unit-files | grep php-fpm
-		php-fpm.service										enable
+		sudo systemctl enable php-fpm
+		sudo systemctl start php-fpm
 
 
 ###mariadb(mysql)をインストールする。
 		sudo yum -y install mariadb mariadb-server
 
-PHPの時とほぼ一緒なので説明は省略。
+		sudo systemctl enable mariadb.service
+		sudo systemctl start mariadb.service
 
-		systemctl list-units |grep mariadb
-		systemctl list-unit-files |grep mariadb
+文字コードの設定
+		sudo vi /etc/my.cnf.d/server.cnf
 
-		systemctl start mariadb.service
+[mysqld]の下に以下の行を追加
+		character-set-server = utf8
 
-		systemctl list-units |grep mariadb
-		systemctl list-unit-files |grep mariadb
-
-		systemctl enable mariadb.service
-
-		systemctl list-unit-files |grep mariadb
 
 ####Wordpressで使用するデータベースを作成
 SQLファイルを作成してデータベース作成とユーザの登録を行う(mysqlコマンドを使って一気に流すパターン)
@@ -304,7 +218,7 @@ SQLファイルを作成してデータベース作成とユーザの登録を�
 		insert into user set user="[ユーザ名]", password=password('[password]'),host="localhost";
 		create database [データベース名];
 		grant all on *.* to [ユーザ名]@localhost;
-		FLUSH PRIVIEGES;
+		FLUSH PRIVILEGES;
 
 書いたら次のコマンドを実行
 		mysql -uroot -Dmysql < wordpress.sql
@@ -326,7 +240,9 @@ SQLファイルを作成してデータベース作成とユーザの登録を�
 		ip addr
 
 して、IPアドレスを確認したらブラウザで
-**http://[IPアドレス]/**
+
+**http://[IPアドレス]/wp-admin/setup-config.php
+
 を開く、開けなかったら何かしらのエラーログを確認。
 大体Section1.mdかSection2.mdを見返せば解決する。
 
