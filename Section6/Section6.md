@@ -11,16 +11,74 @@
 
 [公式サイト](http://aws.amazon.com/jp/cli/)参照。
 
+まずはよなしろせんせーからアクセスキーをもらう。
+公式サイトを見ながら進める。
+
+aws configureの設定までできたら
+
+###インスタンスの作成
+
+AWS公式サイトへ行ってサインアップをするとマネジメントコンソールが開かれるのでEC2を選択しインスタンスを作成する。
+マシンイメージはAmazon Linux、あとはデフォルトのまま作成。
+作成時にpemファイルをダウンロードするので権限を400に変更
+
+		chmod 400 [ファイル名].pem
+
+インスタンスの一覧を取得する
+
+		aws ec2 describe-instances 
+
+###インスタンスのセキュリティグループにHTTPを追加
+
+インスタンスをクリックし、セキュリティグループの設定画面に移動する。
+編集を選択しHTTPを追加
+
+インスタンスを作成したら今後はコマンドを使って起動や停止を行う
+
+起動
+
+		aws ec2 start-instances --instance-ids [id名]
+
+
+停止
+
+		aws ec2 stop-instances --instance-ids [id名]
+
+###インスタンスにssh接続
+
+EC2 Management Console画面に行き自分の作成したインスタンスを選択、上の接続ボタンを押して画面に出てきた通りに実行する。
+うまく実行できれば終了。
+
+注意：pemファイルのある場所で接続しないとうまく行きません。
+
 ## 6-1	AWS EC2 + Ansible
 
 Amazon Elastic Computing Cloud(EC2)を使用してWordpressが動作するサーバーを作ります。
 
-3-1を終了している場合、Ansibleで構築できるようになっているのでAnsibleを使って構築する。
-終わってない場合は手動でがんばってね。
+###hostsファイルの作成
+
+以下の文字をhostsファイルに書く。
+
+		vi hosts
+
+		[all]
+		[EC2のIPアドレス]
+
+ファイルを落として、playbookを実行
+
+		ansible-playbook -i hosts --private-key ./[pemファイル] playbook.yml
+
+あとは今までどおりブラウザで開いてWordPressの設定して終了。
 
 ### AMI(Amazon Machine Image)を作る
 
 環境の構築が終わったら、AMIを作成します。AMIを作成後、同じマシンを2つ起動して、コピーができていることを確認してください。
+
+インスタンスをクリック、イメージ、作成を選択
+なんか適当に設定する。
+
+AMIの画面に反映されたらインスタンスを作成。
+初回にインスタンスを作成したようにセキュリティグループにHTTPを追加してブラウザで開きWordPressが動いていることを確認。
 
 ## 6-2 AWS EC2(AMIMOTO)
 
