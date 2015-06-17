@@ -150,17 +150,99 @@ CloudFrontはCDNサービスです。CDNって何って?ggrましょう(ちゃ�
 
 また、CloudFrontを経由することで、地域ごとにアクセス可能にしたり不可にしたりできるので、それを試してみましょう。
 
+AWSマネジメントコンソール　＞　CloudFront　＞　Create Distribution
+
+webの項目でGet Startedをクリック
+
+Origin Domein NameにAMIのパブリックDNSを入力
+Origin IDには適当にID入れて
+
+Forward Query Stringsの項目はYesに変更
+
+あとはデフォルトでおｋ
+
+EnableになったらDomein NameのURLで接続、ちゃんと起動してたらabコマンドでどっちが早いかチェック
+
+大体3倍位早いってのがわかれば終わり。
+
 ## 6-6 RDS
 
 RDSは…MySQLっぽい奴です。
 
 RDSを立ち上げて、6-1で作ったAMIのWordpressのDBをRDSに向けてみよう。
 
+
+AWSマネジメントコンソール　＞　RDS　＞　DBインスタンスの起動　＞　MySQL
+
+いいえ
+
+DBインスタンスのクラスを一番上のなんとかmicroに変更
+マルチAZ配置をはい
+
+ストレージタイプをマグネティック
+
+あとは適当に空欄を埋めていって
+
+次の画面でパブリック・アクセス可能をいいえに変更、データベースの名前を入れてインスタンス作成
+
+EC2のインスタンスにsshで接続
+
+RDSのmysqlにログインしてログアウト
+
+/usr/share/nginx/wordpress/wp-config.phpを削除してブラウザでWordPressを起動、データベースをlocalhostからRDSに変更
+
+ちゃんと動いたら終わり。
+
 ## 6-7 ELB
 
 ELBはロードバランサーです。すごいよ。
 
 6-1で作ったAMIを3台ぶんくらい立ち上げてELBに登録し、負荷が割り振られているか確認してみよう。
+
+まずはじめにAMIを3台位立ち上げる。
+次に
+
+AWSマネジメントコンソール　＞　EC2　＞　ロードバランサー
+
+ロードバランサーの作成
+
+名前入れて次へ
+
+セキュリティグループを設定して次へ
+
+pingパスを/にして次へ
+
+インスタンスの追加
+
+タグの追加はしないでおｋ
+
+###mysqlの設定をもにょもにょ
+
+立ち上げたインスタンス分のターミナルを起動し、SSH接続する、以下は起動したターミナル全てで実行する。
+
+mysqlに接続
+
+		mysql -u root -p
+
+以下を実行
+
+		use [データベース名]
+		UPDATE wp_options set option_value = "/" where option_id in (1,2);
+		exit
+
+実行できたらロードバランサーのインスタンスのステータスがInServiceになるまで待機
+
+InServiceになったら以下のコマンドを実行
+
+		sudo tail -f /var/log/nginx/access.log
+
+
+###負荷が割り振られているか確認
+
+ロードバランサーのDNSにブラウザでアクセス
+
+すべてのターミナルが見える状況で何回か更新してちゃんと分散されてるか確認できたら終わり
+
 
 ## 6-8 API叩いてみよう
 
