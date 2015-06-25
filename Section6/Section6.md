@@ -86,7 +86,7 @@ AMIの画面に反映されたらインスタンスを作成。
 
 AMIMOTOのWordpressを起動してWordpressが見れることを確認する。
 
-インスタンス　＞　インスタンスの作成　＞　AWS Marketplace
+ ** インスタンス　＞　インスタンスの作成　＞　AWS Marketplace **
 [AMIMOTO]で検索してHHVMを選択、あとは流れで。
 
 **セキュリティグループの説明が日本語で書かれていたらエラーが起こるので気をつけてね！
@@ -100,7 +100,7 @@ Route53はAWSが提供するDNSサービス。
 
 5-1で作ったDNSの情報をRoute53に突っ込んでみよう。
 
-AWSマネジメントコンソール　＞　Route53　＞　Hosted Zones　＞　Create Hosted Zone
+ ** AWSマネジメントコンソール　＞　Route53　＞　Hosted Zones　＞　Create Hosted Zone **
 
 適当にドメイン作成してゾーンファイルをインポートする。(5-1で使ったやつをそのまま使ってもおｋ)
 
@@ -114,7 +114,7 @@ S3はSimple Storage Service。その名の通り、ファイルを保存し、(�
 
 S3にアップロードする際にはAWSコマンドラインインターフェイスを使ってね。
 
-AWSマネジメントコンソール　＞　S3　＞　バケットを作成
+ ** AWSマネジメントコンソール　＞　S3　＞　バケットを作成 **
 
 てきとーにHTMLファイルを作成
 
@@ -150,7 +150,7 @@ CloudFrontはCDNサービスです。CDNって何って?ggrましょう(ちゃ�
 
 また、CloudFrontを経由することで、地域ごとにアクセス可能にしたり不可にしたりできるので、それを試してみましょう。
 
-AWSマネジメントコンソール　＞　CloudFront　＞　Create Distribution
+ ** AWSマネジメントコンソール　＞　CloudFront　＞　Create Distribution **
 
 webの項目でGet Startedをクリック
 
@@ -172,7 +172,7 @@ RDSは…MySQLっぽい奴です。
 RDSを立ち上げて、6-1で作ったAMIのWordpressのDBをRDSに向けてみよう。
 
 
-AWSマネジメントコンソール　＞　RDS　＞　DBインスタンスの起動　＞　MySQL
+ ** AWSマネジメントコンソール　＞　RDS　＞　DBインスタンスの起動　＞　MySQL **
 
 いいえ
 
@@ -202,7 +202,7 @@ ELBはロードバランサーです。すごいよ。
 まずはじめにAMIを3台位立ち上げる。
 次に
 
-AWSマネジメントコンソール　＞　EC2　＞　ロードバランサー
+ ** AWSマネジメントコンソール　＞　EC2　＞　ロードバランサー **
 
 ロードバランサーの作成
 

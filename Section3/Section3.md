@@ -43,8 +43,6 @@ Vaglantfileに書いてあるの全部コピーしてね
 
 ###playbook書く
 playbook.ymlにいろいろ書いてあるのでコピペしてね
+コピペできたら以下のコマンドを実行してplaybookを読み込みましょう
 
 		vagrant provision
-###playbookでコマンドを実行
-
-2-1でWordpressをNginx + PHP + MariaDBでインストールした手順をAnsibleのPlaybookで実行するように記述し、動かしてみてください。
